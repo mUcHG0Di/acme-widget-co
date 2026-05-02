@@ -1,0 +1,49 @@
+{
+    "name": "marcosgodoy/acme-widgets",
+    "description": "POC basket and pricing engine for Acme Widget Co.",
+    "type": "library",
+    "require": {
+        "php": "^8.5"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.64",
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^11.4"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Marcosgodoy\\AcmeWidgets\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Marcos Godoy",
+            "email": "marcosgodoygadea@gmail.com"
+        }
+    ],
+    "scripts": {
+        "test": "phpunit",
+        "lint": "php-cs-fixer fix --dry-run --diff",
+        "lint:fix": "php-cs-fixer fix",
+        "analyse": "phpstan analyse",
+        "check": [
+            "@lint",
+            "@analyse",
+            "@test"
+        ]
+    },
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite.",
+        "lint": "Check code style without modifying files.",
+        "lint:fix": "Apply code style fixes.",
+        "analyse": "Run PHPStan static analysis at max level.",
+        "check": "Run the full quality gate: lint, analyse, test."
+    },
+    "config": {
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
