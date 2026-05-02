@@ -7,7 +7,8 @@ namespace Marcosgodoy\AcmeWidgets\Tests;
 use Marcosgodoy\AcmeWidgets\Basket;
 use Marcosgodoy\AcmeWidgets\Catalogue\ProductCatalogue;
 use Marcosgodoy\AcmeWidgets\Catalogue\UnknownProductException;
-use Marcosgodoy\AcmeWidgets\Delivery\DeliveryCalculator;
+use Marcosgodoy\AcmeWidgets\Delivery\DeliveryTier;
+use Marcosgodoy\AcmeWidgets\Delivery\TieredDeliveryCalculator;
 use Marcosgodoy\AcmeWidgets\Money;
 use Marcosgodoy\AcmeWidgets\Product;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -23,6 +24,15 @@ final class BasketTest extends TestCase
         $basket = $this->makeBasket();
 
         self::assertTrue($basket->total()->equals(Money::zero()));
+    }
+
+    #[Test]
+    public function an_empty_basket_does_not_charge_delivery(): void
+    {
+        $basket = $this->makeBasket();
+
+        self::assertTrue($basket->total()->equals(Money::zero()));
+        self::assertSame(0, $basket->count());
     }
 
     #[Test]
@@ -67,17 +77,17 @@ final class BasketTest extends TestCase
     }
 
     #[Test]
-    public function the_total_of_a_single_item_is_its_price(): void
+    public function the_total_of_a_single_item_includes_delivery(): void
     {
         $basket = $this->makeBasket();
 
         $basket->add('R01');
 
-        self::assertTrue($basket->total()->equals(Money::fromCents(3295)));
+        self::assertTrue($basket->total()->equals(Money::fromCents(3790)));
     }
 
     #[Test]
-    public function the_total_sums_the_prices_of_all_items(): void
+    public function the_total_sums_line_items_and_applies_delivery(): void
     {
         $basket = $this->makeBasket();
 
@@ -85,31 +95,29 @@ final class BasketTest extends TestCase
         $basket->add('G01');
         $basket->add('B01');
 
-        // 32.95 + 24.95 + 7.95 = 65.85
-        self::assertTrue($basket->total()->equals(Money::fromCents(6585)));
+        self::assertTrue($basket->total()->equals(Money::fromCents(6880)));
     }
 
     #[Test]
-    public function repeated_items_contribute_their_price_each_time(): void
+    public function repeated_items_contribute_their_price_each_time_with_delivery(): void
     {
         $basket = $this->makeBasket();
 
         $basket->add('R01');
         $basket->add('R01');
 
-        self::assertTrue($basket->total()->equals(Money::fromCents(6590)));
+        self::assertTrue($basket->total()->equals(Money::fromCents(6885)));
     }
 
     private function makeBasket(): Basket
     {
         return new Basket(
             catalogue: $this->makeCatalogue(),
-            deliveryCalculator: new class () implements DeliveryCalculator {
-                public function calculate(Money $subtotal): Money
-                {
-                    return Money::zero();
-                }
-            },
+            deliveryCalculator: new TieredDeliveryCalculator(
+                new DeliveryTier(Money::zero(), Money::fromCents(495)),
+                new DeliveryTier(Money::fromCents(5000), Money::fromCents(295)),
+                new DeliveryTier(Money::fromCents(9000), Money::zero()),
+            ),
             offers: [],
         );
     }

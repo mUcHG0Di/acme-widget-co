@@ -34,6 +34,10 @@ final class Basket
 
     public function total(): Money
     {
+        if ($this->items === []) {
+            return Money::zero();
+        }
+
         $subtotal = $this->subtotal();
         $delivery = $this->deliveryCalculator->calculate($subtotal);
 
