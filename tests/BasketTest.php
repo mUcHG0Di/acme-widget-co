@@ -10,6 +10,7 @@ use Marcosgodoy\AcmeWidgets\Catalogue\UnknownProductException;
 use Marcosgodoy\AcmeWidgets\Delivery\DeliveryTier;
 use Marcosgodoy\AcmeWidgets\Delivery\TieredDeliveryCalculator;
 use Marcosgodoy\AcmeWidgets\Money;
+use Marcosgodoy\AcmeWidgets\Offer\BuyOneGetSecondHalfPrice;
 use Marcosgodoy\AcmeWidgets\Product;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\Test;
@@ -107,6 +108,44 @@ final class BasketTest extends TestCase
         $basket->add('R01');
 
         self::assertTrue($basket->total()->equals(Money::fromCents(6885)));
+    }
+
+    #[Test]
+    public function offers_reduce_the_total(): void
+    {
+        $basket = new Basket(
+            catalogue: $this->makeCatalogue(),
+            deliveryCalculator: new TieredDeliveryCalculator(
+                new DeliveryTier(Money::zero(), Money::fromCents(495)),
+                new DeliveryTier(Money::fromCents(5000), Money::fromCents(295)),
+                new DeliveryTier(Money::fromCents(9000), Money::zero()),
+            ),
+            offers: [new BuyOneGetSecondHalfPrice('R01')],
+        );
+
+        $basket->add('R01');
+        $basket->add('R01');
+
+        self::assertTrue($basket->total()->equals(Money::fromCents(5437)));
+    }
+
+    #[Test]
+    public function delivery_is_computed_on_the_post_discount_subtotal(): void
+    {
+        $basket = new Basket(
+            catalogue: $this->makeCatalogue(),
+            deliveryCalculator: new TieredDeliveryCalculator(
+                new DeliveryTier(Money::zero(), Money::fromCents(495)),
+                new DeliveryTier(Money::fromCents(5000), Money::fromCents(295)),
+                new DeliveryTier(Money::fromCents(9000), Money::zero()),
+            ),
+            offers: [new BuyOneGetSecondHalfPrice('R01')],
+        );
+
+        $basket->add('R01');
+        $basket->add('R01');
+
+        self::assertTrue($basket->total()->equals(Money::fromCents(5437)));
     }
 
     private function makeBasket(): Basket

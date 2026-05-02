@@ -6,6 +6,7 @@ namespace Marcosgodoy\AcmeWidgets;
 
 use Marcosgodoy\AcmeWidgets\Catalogue\ProductCatalogue;
 use Marcosgodoy\AcmeWidgets\Delivery\DeliveryCalculator;
+use Marcosgodoy\AcmeWidgets\Offer\Offer;
 
 final class Basket
 {
@@ -13,7 +14,7 @@ final class Basket
     private array $items = [];
 
     /**
-     * @param list<object> $offers Reserved for a later commit; currently unused.
+     * @param list<Offer> $offers
      */
     public function __construct(
         private readonly ProductCatalogue $catalogue,
@@ -38,10 +39,10 @@ final class Basket
             return Money::zero();
         }
 
-        $subtotal = $this->subtotal();
-        $delivery = $this->deliveryCalculator->calculate($subtotal);
+        $discounted = $this->subtotal()->minus($this->totalDiscount());
+        $delivery = $this->deliveryCalculator->calculate($discounted);
 
-        return $subtotal->plus($delivery);
+        return $discounted->plus($delivery);
     }
 
     private function subtotal(): Money
@@ -49,6 +50,16 @@ final class Basket
         $running = Money::zero();
         foreach ($this->items as $item) {
             $running = $running->plus($item->price);
+        }
+
+        return $running;
+    }
+
+    private function totalDiscount(): Money
+    {
+        $running = Money::zero();
+        foreach ($this->offers as $offer) {
+            $running = $running->plus($offer->discountFor($this->items));
         }
 
         return $running;
